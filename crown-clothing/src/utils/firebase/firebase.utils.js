@@ -1,12 +1,13 @@
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
-  signInWithRedirect,
   signInWithPopup,
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
 } from "firebase/auth";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 
+//details direcltly copied while setting up firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAaiv9uPzbNhgp_HOJvKRzT8Fq8R0u5dCY",
   authDomain: "crown-clothing-db-2d45b.firebaseapp.com",
@@ -18,22 +19,31 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 
-const provider = new GoogleAuthProvider();
-provider.setCustomParameters({
+//FOR GOOGLE PROVIDER
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
   prompt: "select_account",
 });
 
+//FOR AUTHENTICATION
 export const auth = getAuth();
-export const signInWithGooglePopup = () => signInWithPopup(auth, provider);
 
+export const signInWithGooglePopup = () =>
+  signInWithPopup(auth, googleProvider);
+
+//FOR STORING USER DATA
 export const db = getFirestore();
 
-export const createUserDocumentFromAuth = async (userAuth) => {
+export const createUserDocumentFromAuth = async (
+  userAuth,
+  additionalInformation = {}
+) => {
   const userDocRef = doc(db, "users", userAuth.uid); // db, collections,unique id identifier ; doc = gives document ref for that db inside collections with that id
+  // console.log("user doc ref : ", userDocRef);
 
-  console.log("user doc ref : ", userDocRef);
   const userSnapshot = await getDoc(userDocRef); //gets the data for that doc
-  console.log("snapshot --> ", userSnapshot); //returns boolean if that data exists or not in the db
+  // console.log("snapshot --> ", userSnapshot); //returns boolean if that data exists or not in the db
+
   if (!userSnapshot.exists()) {
     const { displayName, email } = userAuth;
     const createdAt = new Date();
@@ -42,12 +52,22 @@ export const createUserDocumentFromAuth = async (userAuth) => {
         displayName,
         email,
         createdAt,
+        ...additionalInformation,
       });
     } catch (error) {
       console.log("error creating the user", error.message);
     }
   }
   return userDocRef;
+};
+
+export const createAuthUserWithEmailAndPassword = async (email, password) => {
+  if (!email || !password) return;
+  console.log("-->", email, password);
+
+  return await createUserWithEmailAndPassword(auth, email, password);
+
+  // display name is not coming from our (auth) user object ..but form -> to make userDocRef
 };
 
 /* THE FLOW IS :
@@ -63,3 +83,16 @@ we use the userId to :
 ** suerSnapshot.exists() : gives boolean whether the data actually exists in firestore or not 
 
 */
+
+/* 
+    you can have different providers ; whether sign in with google,github etc . 
+    Hence, we create a new object , here we have only used GoogleAuthProvider() . [instantiated as classes]
+    whereas auth is an instance 
+    you can generate a new provider and pass that in to get another sign in method 
+    ** new keyword used to make new objects followed by constructor 
+
+    but there is only one auth = getAuth() cuz for one session we only need to do it once , means one process (one time ?!) of authentication
+ 
+ */
+
+/* Native providers come with firebase by default . we don't need to create one */
