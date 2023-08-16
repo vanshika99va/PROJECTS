@@ -2,23 +2,23 @@ import React, { useState } from "react";
 import {
   createAuthUserWithEmailAndPassword,
   createUserDocumentFromAuth,
+  signInWithGooglePopup,
+  signInAuthUserWithEmailAndPassword,
 } from "../../utils/firebase/firebase.utils";
 import FormInput from "../form-input/FormInput";
 import Button from "../button/Button";
-import "./SignUpForm.scss";
+import "./SignInForm.scss";
 
 const defaultFormFields = {
-  displayName: "",
   email: "",
   password: "",
-  confirmPassword: "",
   //leverage firebase auth methods to store this and store store it in db
   //so that even if firebase is hacked passwords are not leaked
 };
 
-function SignUpForm() {
+function SignInForm() {
   const [formFields, setFormFields] = useState(defaultFormFields);
-  const { displayName, email, password, confirmPassword } = formFields;
+  const { email, password } = formFields;
 
   const resetFormFields = () => {
     setFormFields(defaultFormFields);
@@ -26,30 +26,24 @@ function SignUpForm() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    //check if passwords match
-    //create user after authentication
-    //create userDocRef for that user
-    if (password != confirmPassword) {
-      alert("passwords do not match");
-      return;
-    }
+
     try {
-      const { user } = await createAuthUserWithEmailAndPassword(
+      const response = await signInAuthUserWithEmailAndPassword(
         email,
         password
       );
-      console.log(user);
-      await createUserDocumentFromAuth(user, { displayName });
-      resetFormFields();
+      console.log(response);
     } catch (error) {
-      console.error("User creation logs an error: ", error);
-      if (error.code == "auth/email-already-in-use") {
-        alert("Cannot create user, email already in use!");
+      console.log("ERROR: ", error);
+
+      switch (error.code) {
+        case "auth/user-not-found":
+          alert("User not Found");
+          break;
+        case "auth/wrong-password":
+          alert("Password incorrect");
+          break;
       }
-      if (error.code == "auth/invalid-email") {
-        alert("Please enter valid email!");
-      }
-      // if(error.code == 'auth/popup-closed-by-user')
     }
   };
 
@@ -58,19 +52,16 @@ function SignUpForm() {
     setFormFields({ ...formFields, [name]: value });
   };
 
+  const signInWithGoogle = async () => {
+    const { user } = await signInWithGooglePopup();
+    const userDocRef = await createUserDocumentFromAuth(user);
+  };
+
   return (
     <div className="sign-up-form-container">
-      <h2>Don't have an account ? </h2>
-      <span> Sign up with your email and password</span>
+      <h2>Already have an account ? </h2>
+      <span> Sign in with your email and password</span>
       <form onSubmit={handleSubmit}>
-        <FormInput
-          label={"Display Name"}
-          type="text"
-          required
-          onChange={handleChange}
-          name="displayName"
-          value={displayName}
-        />
         {/* visual aspect of what user seees in the input is determinded by the value
           if you set the default value ={"abc"} you will see abc in that field */}
 
@@ -90,20 +81,15 @@ function SignUpForm() {
           name="password"
           value={password}
         />
-
-        <FormInput
-          label={"Confirm Password"}
-          type="password"
-          required
-          onChange={handleChange}
-          name="confirmPassword"
-          value={confirmPassword}
-        />
-
-        <Button type="submit">Sign up</Button>
+        <div className="buttons-container">
+          <Button type="submit">Sign in</Button>
+          <Button buttonType="google" type="button" onClick={signInWithGoogle}>
+            Google
+          </Button>
+        </div>
       </form>
     </div>
   );
 }
 
-export default SignUpForm;
+export default SignInForm;
