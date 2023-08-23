@@ -38,7 +38,7 @@ function SignUpForm() {
         email,
         password
       );
-      console.log(user);
+
       await createUserDocumentFromAuth(user, { displayName });
       resetFormFields();
     } catch (error) {
@@ -49,7 +49,8 @@ function SignUpForm() {
       if (error.code == "auth/invalid-email") {
         alert("Please enter valid email!");
       }
-      // if(error.code == 'auth/popup-closed-by-user')
+      if (error.code == "auth/popup-closed-by-user")
+        alert("window closed ; authentication failed!");
     }
   };
 

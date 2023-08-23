@@ -5,6 +5,8 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
 } from "firebase/auth";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 
@@ -73,6 +75,11 @@ export const signInAuthUserWithEmailAndPassword = async (email, password) => {
   return await signInWithEmailAndPassword(auth, email, password);
 };
 
+export const signOutUser = () => signOut(auth);
+
+export const onAuthStateChangedListener = (callback) =>
+  onAuthStateChanged(auth, callback);
+
 /* THE FLOW IS :
 
 the google with authenticate and send us back the response with user {}> access_token,uid,display name, email etc. : details of user
@@ -80,7 +87,7 @@ we use the userId to :
 - get the document ref from firestore (userDocRef) : if user exists
 - create / set the document with data from userAuth in my collection : if user data doesnt exist
 
-*even if user doesn't exist Google will give us a object refering to its Documnet , though it will have no data
+*even if user doesn't exist Google will give us a object referring to its Documnet , though it will have no data
 
 *userSnapshot though has the id == user.uid we got from Google
 ** suerSnapshot.exists() : gives boolean whether the data actually exists in firestore or not 
